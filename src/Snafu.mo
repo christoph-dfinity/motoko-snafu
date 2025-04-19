@@ -16,9 +16,9 @@ module {
   public func mkSnafu(msg : Text) : Snafu {
     return {
       errCandid = null;
-      toText = func () : Text = msg;
+      toText = func() : Text = msg;
       source = null;
-    }
+    };
   };
 
   /// Constructs a Snafu and immediately wraps it in #err
@@ -27,7 +27,7 @@ module {
   /// Constructs a structured Error that can be reconstructed/checked via Snafu.as/is
   public func snafuS(msg : Text, toCandid : () -> Blob) : Result<None> = #err {
     errCandid = ?toCandid;
-    toText = func () : Text = msg;
+    toText = func() : Text = msg;
     source = null;
   };
 
@@ -38,11 +38,11 @@ module {
       case (#err(source)) {
         #err {
           errCandid = null;
-          toText = func () : Text = msg;
+          toText = func() : Text = msg;
           source = ?source;
-        }
+        };
       };
-    }
+    };
   };
 
   /// Wraps an incoming Result with extra structured context
@@ -52,11 +52,11 @@ module {
       case (#err(source)) {
         #err {
           errCandid = ?toCandid;
-          toText = func () : Text = msg;
+          toText = func() : Text = msg;
           source = ?source;
-        }
+        };
       };
-    }
+    };
   };
 
   /// Prints a Snafu.Snafu
@@ -65,7 +65,7 @@ module {
     var printedTraceHeader = false;
     for (source in stacktrace(snafu)) {
       if (not printedTraceHeader) {
-        res #="\nCaused by:";
+        res #= "\nCaused by:";
         printedTraceHeader := true;
       };
       res #= "\n    " # source.toText();
@@ -78,32 +78,32 @@ module {
   public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
     var current : ?Snafu = ?snafu;
     return {
-      next = func () : ?Snafu = do? {
+      next = func() : ?Snafu = do ? {
         current := current!.source;
         current!;
       };
-    }
+    };
   };
 
   /// Tries down-casting the error or any of its sources to type A
   /// Expects a filter function that uses `from_candid`
-  public func as<A>(snafu : Snafu, filter : Blob -> ?A): ?A {
-    ignore do? {
-      let candid = snafu.errCandid!();
+  public func as<A>(snafu : Snafu, filter : Blob -> ?A) : ?A {
+    ignore do ? {
+      let candid = snafu.errCandid! ();
       let filtered = filter(candid)!;
-      return ?filtered
+      return ?filtered;
     };
+
     Iter.filterMap(
       stacktrace(snafu),
       func(s : Snafu) : ?A = switch (s.errCandid) {
         case null null;
-        case (?f) filter(f())
-      }
+        case (?f) filter(f());
+      },
     ).next();
   };
 
   /// Checks if the error or any of its sources are of type A
   /// Expects a filter function that uses `from_candid`
-  public func is<A>(snafu : Snafu, filter : Blob -> ?A): Bool =
-    Option.isSome(as<A>(snafu, filter));
-}
+  public func is<A>(snafu : Snafu, filter : Blob -> ?A) : Bool = Option.isSome(as<A>(snafu, filter));
+};
