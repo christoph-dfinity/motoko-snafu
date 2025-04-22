@@ -14,7 +14,7 @@ module {
   };
 
   public func mkSnafu(msg : Text) : Snafu {
-    return {
+    {
       errCandid = null;
       toText = func() : Text = msg;
       source = null;
@@ -59,6 +59,33 @@ module {
     };
   };
 
+  public func fromOption<A>(res : ?A, msg : Text) : Result<A> {
+    switch (res) {
+      case (?a) #ok(a);
+      case null {
+        #err {
+          errCandid = null;
+          toText = func() : Text = msg;
+          source = null;
+        };
+      }
+    }
+  };
+
+  public func fromOptionS<A>(res : ?A, msg : Text, toCandid : () -> Blob) : Result<A> {
+    switch (res) {
+      case (?a) #ok(a);
+      case (null) {
+        #err {
+          errCandid = ?toCandid;
+          toText = func() : Text = msg;
+          source = null;
+        };
+      };
+    };
+  };
+
+
   /// Prints a Snafu.Snafu
   public func print(snafu : Snafu) : Text {
     var res = "Error: " # snafu.toText();
@@ -77,7 +104,7 @@ module {
   /// Returns an iterator over all underlying errors. Does _not_ include the top-level error
   public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
     var current : ?Snafu = ?snafu;
-    return {
+    {
       next = func() : ?Snafu = do ? {
         current := current!.source;
         current!;
@@ -91,7 +118,7 @@ module {
     ignore do ? {
       let candid = snafu.errCandid! ();
       let filtered = filter(candid)!;
-      return ?filtered;
+      ?filtered;
     };
 
     Iter.filterMap(
