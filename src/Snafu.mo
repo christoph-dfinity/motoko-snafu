@@ -13,13 +13,12 @@ module {
     source : ?Snafu;
   };
 
-  public func mkSnafu(msg : Text) : Snafu {
+  public func mkSnafu(msg : Text) : Snafu =
     {
       errCandid = null;
       toText = func() : Text = msg;
       source = null;
     };
-  };
 
   /// Constructs a Snafu and immediately wraps it in #err
   public func snafu(msg : Text) : Result<None> = #err(mkSnafu(msg));
@@ -35,12 +34,10 @@ module {
   public func context<A>(res : Result<A>, msg : Text) : Result<A> {
     switch (res) {
       case (#ok(_)) res;
-      case (#err(source)) {
-        #err {
-          errCandid = null;
-          toText = func() : Text = msg;
-          source = ?source;
-        };
+      case (#err(source)) #err {
+        errCandid = null;
+        toText = func() : Text = msg;
+        source = ?source;
       };
     };
   };
@@ -49,12 +46,10 @@ module {
   public func contextS<A>(res : Result<A>, msg : Text, toCandid : () -> Blob) : Result<A> {
     switch (res) {
       case (#ok(_)) res;
-      case (#err(source)) {
-        #err {
-          errCandid = ?toCandid;
-          toText = func() : Text = msg;
-          source = ?source;
-        };
+      case (#err(source)) #err {
+        errCandid = ?toCandid;
+        toText = func() : Text = msg;
+        source = ?source;
       };
     };
   };
@@ -62,25 +57,21 @@ module {
   public func fromOption<A>(res : ?A, msg : Text) : Result<A> {
     switch (res) {
       case (?a) #ok(a);
-      case null {
-        #err {
-          errCandid = null;
-          toText = func() : Text = msg;
-          source = null;
-        };
-      }
+      case null #err {
+        errCandid = null;
+        toText = func() : Text = msg;
+        source = null;
+      };
     }
   };
 
   public func fromOptionS<A>(res : ?A, msg : Text, toCandid : () -> Blob) : Result<A> {
     switch (res) {
       case (?a) #ok(a);
-      case (null) {
-        #err {
-          errCandid = ?toCandid;
-          toText = func() : Text = msg;
-          source = null;
-        };
+      case (null) #err {
+        errCandid = ?toCandid;
+        toText = func() : Text = msg;
+        source = null;
       };
     };
   };
@@ -118,7 +109,7 @@ module {
     ignore do ? {
       let candid = snafu.errCandid! ();
       let filtered = filter(candid)!;
-      ?filtered;
+      return ?filtered;
     };
 
     Iter.filterMap(
