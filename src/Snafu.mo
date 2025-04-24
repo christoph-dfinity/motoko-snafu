@@ -92,28 +92,30 @@ module {
     res;
   };
 
-  /// Returns an iterator over all underlying errors. Does _not_ include the top-level error
-  public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
+  /// Returns an iterator over all errors. Does include the top-level error
+  public func errors(snafu : Snafu) : Iter.Iter<Snafu> {
     var current : ?Snafu = ?snafu;
     {
       next = func() : ?Snafu = do ? {
-        current := current!.source;
-        current!;
+        let tmp = current!;
+        current := tmp.source;
+        tmp;
       };
     };
+  };
+
+  /// Returns an iterator over all underlying errors. Does _not_ include the top-level error
+  public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
+    let iter = errors(snafu);
+    ignore iter.next();
+    iter
   };
 
   /// Tries down-casting the error or any of its sources to type A
   /// Expects a filter function that uses `from_candid`
   public func as<A>(snafu : Snafu, filter : Blob -> ?A) : ?A {
-    ignore do ? {
-      let candid = snafu.errCandid! ();
-      let filtered = filter(candid)!;
-      return ?filtered;
-    };
-
     Iter.filterMap(
-      stacktrace(snafu),
+      errors(snafu),
       func(s : Snafu) : ?A = switch (s.errCandid) {
         case null null;
         case (?f) filter(f());

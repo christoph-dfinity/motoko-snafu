@@ -3,6 +3,7 @@ import T "mo:matchers/Testable";
 import Suite "mo:matchers/Suite";
 import Snafu "../src/Snafu";
 import Int "mo:base2/Int";
+import Example "./Example";
 
 func print(res: Snafu.Result<Any>): Text {
   switch (res) {
@@ -81,6 +82,7 @@ let suite =
         },
         M.equals(T.bool(true)),
       ),
-    ])
+    ]),
+    Example.suite(),
   ]);
 Suite.run(suite);
