@@ -1,4 +1,4 @@
-import { snafu, context } "../src/Snafu";
+import { snafu; context } "../src/Snafu";
 import Snafu "../src/Snafu";
 import Array "mo:base2/Array";
 import Text "mo:base2/Text";
@@ -20,14 +20,14 @@ module {
   func validateSemver(version : Text) : Snafu.Result<SemVer> {
     let components = Array.fromIter(Text.split(version, #char '.'));
     if (components.size() != 3) {
-      return snafu("Invalid semantic version: '" # version # "'");
+      return #err(snafu("Invalid semantic version: '" # version # "'"));
     };
     #ok({ major = components[0]; minor = components[1]; patch = components[2] });
   };
 
   func validateDependency(dependency : RawDependency) : Snafu.Result<ValidatedDependency> {
     if (dependency.name == "") {
-      return snafu("Empty package name");
+      return #err(snafu("Empty package name"));
     };
     let version = switch (validateSemver(dependency.version)) {
       case (#ok ok) ok;

@@ -13,22 +13,21 @@ module {
     source : ?Snafu;
   };
 
-  public func mkSnafu(msg : Text) : Snafu =
+  /// Constructs a Snafu
+  public func snafu(msg : Text) : Snafu =
     {
       errCandid = null;
       toText = func() : Text = msg;
       source = null;
     };
 
-  /// Constructs a Snafu and immediately wraps it in #err
-  public func snafu(msg : Text) : Result<None> = #err(mkSnafu(msg));
-
   /// Constructs a structured Error that can be reconstructed/checked via Snafu.as/is
-  public func snafuS(msg : Text, toCandid : () -> Blob) : Result<None> = #err {
-    errCandid = ?toCandid;
-    toText = func() : Text = msg;
-    source = null;
-  };
+  public func snafuS(msg : Text, toCandid : () -> Blob) : Snafu =
+    {
+      errCandid = ?toCandid;
+      toText = func() : Text = msg;
+      source = null;
+    };
 
   /// Wraps an incoming Result with extra context
   public func context<A>(res : Result<A>, msg : Text) : Result<A> {
