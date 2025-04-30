@@ -47,8 +47,8 @@ let suite =
       M.equals(T.text("Error: Oh noez\n"))
     ),
     Suite.test("Nested error",
-      print(#err(Snafu.snafu("Oh noez")) |> Snafu.context(_, "Well fuck")),
-      M.equals(T.text("Error: Well fuck\nCaused by:\n    Oh noez\n"))
+      print(Snafu.snafu("Oh noez") |> Snafu.context(_, "Well f**k")),
+      M.equals(T.text("Error: Well f**k\nCaused by:\n    Oh noez\n"))
     ),
     Suite.test("Structured error",
       do? {

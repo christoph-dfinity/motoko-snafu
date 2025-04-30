@@ -22,7 +22,11 @@ module {
     if (components.size() != 3) {
       return #err(snafu("Invalid semantic version: '" # version # "'"));
     };
-    #ok({ major = components[0]; minor = components[1]; patch = components[2] });
+    #ok({
+      major = components[0];
+      minor = components[1];
+      patch = components[2];
+    });
   };
 
   func validateDependency(dependency : RawDependency) : Snafu.Result<ValidatedDependency> {
@@ -30,28 +34,32 @@ module {
       return #err(snafu("Empty package name"));
     };
     let version = switch (validateSemver(dependency.version)) {
-      case (#ok ok) ok;
-      case (#err err) return #err err |> context(_, "Failed to validate package '" # dependency.name # "'");
+      case (#ok(ok)) { ok };
+      case (#err(err)) {
+        return context(err, "Failed to validate package '" # dependency.name # "'");
+      }
     };
     #ok({ name = dependency.name; version });
   };
 
   func validatePackage(package : RawPackage) : Snafu.Result<ValidatedPackage> {
     let pkg = switch (validateDependency(package)) {
-      case (#err err) return #err err;
-      case (#ok ok) ok;
+      case (#err(err)) { return #err(err) };
+      case (#ok(ok)) { ok };
     };
     let dependencies = switch (Array.mapResult(package.dependencies, validateDependency)) {
-      case (#err err) return #err err |> context(_, "Failed to validate dependencies of package '" # package.name # "'");
-      case (#ok ok) ok;
+      case (#err(err)) {
+        return context(err, "Failed to validate dependencies of package '" # package.name # "'")
+      };
+      case (#ok(ok)) { ok };
     };
     #ok({ pkg with dependencies });
   };
 
   func testPrint(res : Snafu.Result<Any>) : Text {
     switch (res) {
-      case (#ok(_)) "All good";
-      case (#err(snafu)) Snafu.print(snafu);
+      case (#ok(_)) { "All good" };
+      case (#err(snafu)) { Snafu.print(snafu) };
     };
   };
 

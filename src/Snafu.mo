@@ -1,48 +1,49 @@
+/// Snafu is a convenient Error type that accumulates context, and makes it easy
+/// to give better errors
 import Result "mo:base2/Result";
 import Iter "mo:base2/Iter";
 import Option "mo:base2/Option";
 
 module {
-
   /// A convenience synonym
   public type Result<A> = Result.Result<A, Snafu>;
 
   public type Snafu = {
-    errCandid: ?(() -> Blob);
-    toText: () -> Text;
-    source: ?Snafu;
+    errCandid : ?(() -> Blob);
+    toText : () -> Text;
+    source : ?Snafu;
   };
 
   /// Constructs a Snafu
-  public func snafu(msg: Text): Snafu =
+  public func snafu(msg : Text) : Snafu =
     {
       errCandid = null;
-      toText = func(): Text = msg;
+      toText = func() : Text = msg;
       source = null;
     };
 
   /// Constructs a structured Error that can be reconstructed/checked via Snafu.as/is
-  public func snafuS(msg: Text, toCandid: () -> Blob): Snafu =
+  public func snafuS(msg : Text, toCandid : () -> Blob) : Snafu =
     {
       errCandid = ?toCandid;
-      toText = func(): Text = msg;
+      toText = func() : Text = msg;
       source = null;
     };
 
   /// Wraps an incoming Result with extra context
-  public func context<A>(res: Result<A>, msg: Text): Result<A> {
+  public func withContext<A>(res : Result<A>, msg : Text) : Result<A> {
     switch (res) {
       case (#ok(_)) res;
       case (#err(source)) #err {
         errCandid = null;
-        toText = func(): Text = msg;
+        toText = func() : Text = msg;
         source = ?source;
       };
     };
   };
 
   /// Wraps an incoming Result with extra structured context
-  public func contextS<A>(res: Result<A>, msg: Text, toCandid: () -> Blob): Result<A> {
+  public func withContextS<A>(res : Result<A>, msg : Text, toCandid : () -> Blob) : Result<A> {
     switch (res) {
       case (#ok(_)) res;
       case (#err(source)) #err {
@@ -53,31 +54,48 @@ module {
     };
   };
 
-  public func fromOption<A>(res: ?A, msg: Text): Result<A> {
+  /// Adds context to a given Snafu and wraps it in #err.
+  public func context(source : Snafu, msg : Text) : Result<None> {
+    #err({
+      errCandid = null;
+      toText = func() : Text = msg;
+      source = ?source;
+    });
+  };
+
+  /// Adds structured context to a given Snafu and wraps it in #err.
+  public func contextS(source : Snafu, msg : Text, toCandid : () -> Blob) : Result<None> {
+    #err({
+      errCandid = ?toCandid;
+      toText = func() : Text = msg;
+      source = ?source;
+    });
+  };
+
+  public func fromOption<A>(res : ?A, msg : Text) : Result<A> {
     switch (res) {
       case (?a) #ok(a);
       case (null) #err {
         errCandid = null;
-        toText = func(): Text = msg;
+        toText = func() : Text = msg;
         source = null;
       };
     }
   };
 
-  public func fromOptionS<A>(res: ?A, msg: Text, toCandid: () -> Blob): Result<A> {
+  public func fromOptionS<A>(res : ?A, msg : Text, toCandid : () -> Blob) : Result<A> {
     switch (res) {
       case (?a) #ok(a);
       case (null) #err {
         errCandid = ?toCandid;
-        toText = func(): Text = msg;
+        toText = func() : Text = msg;
         source = null;
       };
     };
   };
 
-
   /// Prints a Snafu.Snafu
-  public func print(snafu: Snafu): Text {
+  public func print(snafu : Snafu) : Text {
     var res = "Error: " # snafu.toText();
     var printedTraceHeader = false;
     for (source in stacktrace(snafu)) {
@@ -92,10 +110,10 @@ module {
   };
 
   /// Returns an iterator over all errors. Does include the top-level error
-  public func errors(snafu: Snafu): Iter.Iter<Snafu> {
-    var current: ?Snafu = ?snafu;
+  public func errors(snafu : Snafu) : Iter.Iter<Snafu> {
+    var current : ?Snafu = ?snafu;
     {
-      next = func(): ?Snafu = do? {
+      next = func() : ?Snafu = do? {
         let tmp = current!;
         current := tmp.source;
         tmp;
@@ -104,7 +122,7 @@ module {
   };
 
   /// Returns an iterator over all underlying errors. Does _not_ include the top-level error
-  public func stacktrace(snafu: Snafu): Iter.Iter<Snafu> {
+  public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
     let iter = errors(snafu);
     ignore iter.next();
     iter
@@ -112,10 +130,10 @@ module {
 
   /// Tries down-casting the error or any of its sources to type A
   /// Expects a filter function that uses `from_candid`
-  public func as<A>(snafu: Snafu, filter: Blob -> ?A): ?A {
+  public func as<A>(snafu : Snafu, filter : Blob -> ?A) : ?A {
     Iter.filterMap(
       errors(snafu),
-      func(s: Snafu): ?A = switch (s.errCandid) {
+      func(s : Snafu) : ?A = switch (s.errCandid) {
         case (null) null;
         case (?f) filter(f());
       },
@@ -124,5 +142,6 @@ module {
 
   /// Checks if the error or any of its sources are of type A
   /// Expects a filter function that uses `from_candid`
-  public func is<A>(snafu: Snafu, filter: Blob -> ?A): Bool = Option.isSome(as<A>(snafu, filter));
+  public func is<A>(snafu : Snafu, filter : Blob -> ?A) : Bool =
+    Option.isSome(as<A>(snafu, filter));
 };
