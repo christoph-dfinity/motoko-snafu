@@ -1,12 +1,12 @@
-import { snafu; context } "../src/Snafu";
 import Snafu "../src/Snafu";
-import Array "mo:base2/Array";
-import Text "mo:base2/Text";
+import Array "mo:new-base/Array";
+import Text "mo:new-base/Text";
 import M "mo:matchers/Matchers";
 import T "mo:matchers/Testable";
 import Suite "mo:matchers/Suite";
 
 module {
+
   type SemVer = { major : Text; minor : Text; patch : Text };
   type RawDependency = { name : Text; version : Text };
   type RawPackage = RawDependency and {
@@ -20,7 +20,7 @@ module {
   func validateSemver(version : Text) : Snafu.Result<SemVer> {
     let components = Array.fromIter(Text.split(version, #char '.'));
     if (components.size() != 3) {
-      return #err(snafu("Invalid semantic version: '" # version # "'"));
+      return Snafu.snafu("Invalid semantic version: '" # version # "'");
     };
     #ok({
       major = components[0];
@@ -31,28 +31,26 @@ module {
 
   func validateDependency(dependency : RawDependency) : Snafu.Result<ValidatedDependency> {
     if (dependency.name == "") {
-      return #err(snafu("Empty package name"));
+      return Snafu.snafu("Invalid empty package name");
     };
-    let version = switch (validateSemver(dependency.version)) {
-      case (#ok(ok)) { ok };
-      case (#err(err)) {
-        return context(err, "Failed to validate package '" # dependency.name # "'");
-      }
-    };
+    let version = validateSemver(dependency.version) |> (switch _ {
+      case (#ok ok) ok;
+      case (#err err)
+        return Snafu.context(err, "Failed to validate package '" # dependency.name # "'");
+    });
     #ok({ name = dependency.name; version });
   };
 
   func validatePackage(package : RawPackage) : Snafu.Result<ValidatedPackage> {
-    let pkg = switch (validateDependency(package)) {
-      case (#err(err)) { return #err(err) };
-      case (#ok(ok)) { ok };
-    };
-    let dependencies = switch (Array.mapResult(package.dependencies, validateDependency)) {
-      case (#err(err)) {
-        return context(err, "Failed to validate dependencies of package '" # package.name # "'")
-      };
-      case (#ok(ok)) { ok };
-    };
+    let pkg = validateDependency(package) |> (switch _ {
+      case (#ok ok) ok;
+      case (#err err) return #err(err);
+    });
+    let dependencies = Array.mapResult(package.dependencies, validateDependency) |> (switch _ {
+      case (#ok ok) ok;
+      case (#err err)
+        return Snafu.context(err, "Failed to validate dependencies of package '" # package.name # "'");
+    });
     #ok({ pkg with dependencies });
   };
 
@@ -75,7 +73,7 @@ module {
         Suite.test(
           "Fails to validate package name",
           testPrint(validatePackage({ name = ""; version = "1.0.0"; dependencies = [] })),
-          M.equals(T.text("Error: Empty package name\n")),
+          M.equals(T.text("Error: Invalid empty package name\n")),
         ),
         Suite.test(
           "Fails to validate package version",
@@ -96,7 +94,7 @@ Caused by:
             T.text(
               "Error: Failed to validate dependencies of package 'matchers'
 Caused by:
-    Empty package name
+    Invalid empty package name
 "
             )
           ),

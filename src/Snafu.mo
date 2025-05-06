@@ -1,13 +1,14 @@
-/// Snafu is a convenient Error type that accumulates context, and makes it easy
-/// to give better errors
-import Result "mo:base2/Result";
-import Iter "mo:base2/Iter";
-import Option "mo:base2/Option";
+/// Snafu is a convenient Error type that accumulates context, and
+/// makes it easy to report better errors
+import Result "mo:new-base/Result";
+import Iter "mo:new-base/Iter";
+import Option "mo:new-base/Option";
 
 module {
-  /// A convenience synonym
+  /// A Snafu.Result is
   public type Result<A> = Result.Result<A, Snafu>;
 
+  /// An Error type with context
   public type Snafu = {
     errCandid : ?(() -> Blob);
     toText : () -> Text;
@@ -15,7 +16,7 @@ module {
   };
 
   /// Constructs a Snafu
-  public func snafu(msg : Text) : Snafu =
+  public func mkSnafu(msg : Text) : Snafu =
     {
       errCandid = null;
       toText = func() : Text = msg;
@@ -23,36 +24,19 @@ module {
     };
 
   /// Constructs a structured Error that can be reconstructed/checked via Snafu.as/is
-  public func snafuS(msg : Text, toCandid : () -> Blob) : Snafu =
+  public func mkSnafuS(msg : Text, toCandid : () -> Blob) : Snafu =
     {
       errCandid = ?toCandid;
       toText = func() : Text = msg;
       source = null;
     };
 
-  /// Wraps an incoming Result with extra context
-  public func withContext<A>(res : Result<A>, msg : Text) : Result<A> {
-    switch (res) {
-      case (#ok(_)) res;
-      case (#err(source)) #err {
-        errCandid = null;
-        toText = func() : Text = msg;
-        source = ?source;
-      };
-    };
-  };
+  /// Constructs a Snafu Result
+  public func snafu(msg : Text) : Result<None> = #err(mkSnafu(msg));
 
-  /// Wraps an incoming Result with extra structured context
-  public func withContextS<A>(res : Result<A>, msg : Text, toCandid : () -> Blob) : Result<A> {
-    switch (res) {
-      case (#ok(_)) res;
-      case (#err(source)) #err {
-        errCandid = ?toCandid;
-        toText = func(): Text = msg;
-        source = ?source;
-      };
-    };
-  };
+  /// Constructs a structured Snafu Result that can be reconstructed/checked via Snafu.as/is
+  public func snafuS(msg : Text, toCandid : () -> Blob) : Result<None> =
+    #err(mkSnafuS(msg, toCandid));
 
   /// Adds context to a given Snafu and wraps it in #err.
   public func context(source : Snafu, msg : Text) : Result<None> {
@@ -64,7 +48,11 @@ module {
   };
 
   /// Adds structured context to a given Snafu and wraps it in #err.
-  public func contextS(source : Snafu, msg : Text, toCandid : () -> Blob) : Result<None> {
+  public func contextS(
+    source : Snafu,
+    msg : Text,
+    toCandid : () -> Blob
+  ) : Result<None> {
     #err({
       errCandid = ?toCandid;
       toText = func() : Text = msg;
@@ -72,29 +60,7 @@ module {
     });
   };
 
-  public func fromOption<A>(res : ?A, msg : Text) : Result<A> {
-    switch (res) {
-      case (?a) #ok(a);
-      case (null) #err {
-        errCandid = null;
-        toText = func() : Text = msg;
-        source = null;
-      };
-    }
-  };
-
-  public func fromOptionS<A>(res : ?A, msg : Text, toCandid : () -> Blob) : Result<A> {
-    switch (res) {
-      case (?a) #ok(a);
-      case (null) #err {
-        errCandid = ?toCandid;
-        toText = func() : Text = msg;
-        source = null;
-      };
-    };
-  };
-
-  /// Prints a Snafu.Snafu
+  /// Prints a Snafu including its context trace
   public func print(snafu : Snafu) : Text {
     var res = "Error: " # snafu.toText();
     var printedTraceHeader = false;
@@ -109,7 +75,8 @@ module {
     res;
   };
 
-  /// Returns an iterator over all errors. Does include the top-level error
+  /// Returns an iterator over all errors. Does include the top-level
+  /// error
   public func errors(snafu : Snafu) : Iter.Iter<Snafu> {
     var current : ?Snafu = ?snafu;
     {
@@ -121,7 +88,8 @@ module {
     };
   };
 
-  /// Returns an iterator over all underlying errors. Does _not_ include the top-level error
+  /// Returns an iterator over all underlying errors.
+  /// Does _not_ include the top-level error
   public func stacktrace(snafu : Snafu) : Iter.Iter<Snafu> {
     let iter = errors(snafu);
     ignore iter.next();

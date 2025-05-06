@@ -2,7 +2,7 @@ import M "mo:matchers/Matchers";
 import T "mo:matchers/Testable";
 import Suite "mo:matchers/Suite";
 import Snafu "../src/Snafu";
-import Int "mo:base2/Int";
+import Int "mo:new-base/Int";
 import Example "./Example";
 
 func print(res: Snafu.Result<Any>): Text {
@@ -32,27 +32,27 @@ type Params = {
 
 func collectionCount(params : Params) : Snafu.Result<Nat> {
   let ?collection = params.collection else {
-    return #err(Snafu.snafuS("Missing collection", func() = to_candid(#invalidParam("Missing collection"))))
+    return Snafu.snafuS("Missing collection", func() = to_candid(#invalidParam("Missing collection")))
   };
   switch collection {
     case "notes" { #ok(20) };
-    case c { #err(Snafu.snafuS("Unknown collection" # c, func() = to_candid(#unknownCollection({ collection = c })))) }
+    case c { Snafu.snafuS("Unknown collection" # c, func() = to_candid(#unknownCollection({ collection = c }))) }
   };
 };
 
 let suite =
   Suite.suite("Snafu tests", [
     Suite.test("Simple error",
-      print(#err(Snafu.snafu("Oh noez"))),
+      print(Snafu.snafu("Oh noez")),
       M.equals(T.text("Error: Oh noez\n"))
     ),
     Suite.test("Nested error",
-      print(Snafu.snafu("Oh noez") |> Snafu.context(_, "Well f**k")),
+      print(Snafu.mkSnafu("Oh noez") |> Snafu.context(_, "Well f**k")),
       M.equals(T.text("Error: Well f**k\nCaused by:\n    Oh noez\n"))
     ),
     Suite.test("Structured error",
       do? {
-        let err = Snafu.snafuS("Oh noez", func () { to_candid({ code = 10; path = "well/dude" }) });
+        let err = Snafu.mkSnafuS("Oh noez", func () { to_candid({ code = 10; path = "well/dude" }) });
 
         let downCasted: ?StructuredError = from_candid(err.errCandid!());
         "Code: " # Int.toText(downCasted!.code) # " at: " # downCasted!.path
