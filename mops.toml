@@ -7,7 +7,7 @@ matchers = "https://github.com/kritzcreek/motoko-matchers#3dac8a071b69e4e651b25a
 
 [package]
 name = "motoko-snafu"
-version = "1.0.0"
+version = "0.1.0"
 description = "Motoko errors with context"
 repository = "https://github.com/christoph-dfinity/motoko-snafu"
 keywords = [ "errors" ]
