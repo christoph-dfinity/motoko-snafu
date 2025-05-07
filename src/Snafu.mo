@@ -5,7 +5,6 @@ import Iter "mo:new-base/Iter";
 import Option "mo:new-base/Option";
 
 module {
-  /// A Snafu.Result is
   public type Result<A> = Result.Result<A, Snafu>;
 
   /// An Error type with context
@@ -61,7 +60,7 @@ module {
   };
 
   /// Prints a Snafu including its context trace
-  public func print(snafu : Snafu) : Text {
+  public func mkPretty(snafu : Snafu) : Text {
     var res = "Error: " # snafu.toText();
     var printedTraceHeader = false;
     for (source in stacktrace(snafu)) {
@@ -74,6 +73,14 @@ module {
     res #= "\n";
     res;
   };
+
+  /// Converts a Snafu Result into Text including its context trace
+  public func prettyTrace<A>(res : Result<A>) : Result.Result<A, Text> =
+    Result.mapErr(res, mkPretty);
+
+  /// Converts the top-level Snafu in a Result into Text
+  public func pretty<A>(res : Result<A>) : Result.Result<A, Text> =
+    Result.mapErr(res, func (snafu : Snafu) : Text = snafu.toText());
 
   /// Returns an iterator over all errors. Does include the top-level
   /// error

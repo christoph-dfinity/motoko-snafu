@@ -13,3 +13,6 @@ test-mops:
 
 watch:
     watchexec just test
+
+docs:
+    $(vessel bin)/mo-doc
