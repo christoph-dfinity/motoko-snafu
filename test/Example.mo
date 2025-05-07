@@ -55,9 +55,9 @@ module {
   };
 
   func testPrint(res : Snafu.Result<Any>) : Text {
-    switch (res) {
+    switch (Snafu.prettyTrace(res)) {
       case (#ok(_)) { "All good" };
-      case (#err(snafu)) { Snafu.print(snafu) };
+      case (#err(err)) { err };
     };
   };
 

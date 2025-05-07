@@ -5,12 +5,14 @@ import Snafu "../src/Snafu";
 import Int "mo:new-base/Int";
 import Example "./Example";
 
-func print(res: Snafu.Result<Any>): Text {
-  switch (res) {
-    case(#ok(_)) "All good";
-    case(#err(snafu)) Snafu.print(snafu);
-  }
+func print(res : Snafu.Result<Any>) : Text {
+  switch (Snafu.prettyTrace(res)) {
+    case (#ok(_)) { "All good" };
+    case (#err(err)) { err };
+  };
 };
+
+
 
 type StructuredError = {
   code : Nat;
