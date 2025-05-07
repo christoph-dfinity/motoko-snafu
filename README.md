@@ -6,7 +6,7 @@ This library provides an easy to use Error type for idiomatic error handling in 
 
 ```toml
 [dependencies]
-snafu = "0.1.0"
+snafu = "0.1.1"
 ```
 
 ## Usage
