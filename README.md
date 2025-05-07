@@ -61,3 +61,8 @@ actor {
 ```
 
 Check out test/Example.mo for a slightly more involved example.
+
+
+## Attribution
+
+Lots of inspiration for this library was taken from using the [anyhow Rust crate](https://crates.io/crates/anyhow).
