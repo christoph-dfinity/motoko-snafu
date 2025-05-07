@@ -6,7 +6,7 @@ This library provides an easy to use Error type for idiomatic error handling in 
 
 ```toml
 [dependencies]
-snafu = "1.0.0"
+snafu = "0.1.0"
 ```
 
 ## Usage
@@ -49,8 +49,8 @@ actor {
   func registerUser() async Result.Result<UserId, Text> {
     register() |> Snafu.pretty()
     // #err("Failed to create User")
-    register() |> Snafu.prettyTrace()
 
+    register() |> Snafu.prettyTrace()
     // #err(
     // "Error: Failed to create User
     //  Caused by:
